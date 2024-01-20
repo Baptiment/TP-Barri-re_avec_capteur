@@ -1,0 +1,78 @@
+#include <Servo.h>
+
+Servo servo; // création du servo issu du moule Servo
+
+// introduction des constantes
+const int servomoteur = 9;     // servomoteur sur pin 9
+const int trigPin = 4;        // broche de déclenchement du capteur ultrasonique (sortie)
+const int echoPin = 3;        // broche de réception du capteur ultrasonique (entrée)
+const int ledRouge = 13;        // led rouge sur pin 13
+const int ledVerte = 12;        // led verte sur pin 12
+
+// le code dans cette fonction est exécuté une fois au début
+void setup()
+{
+  // on initialise la communication avec le moniteur série
+  Serial.begin(9600);
+
+  // indique que les broches des LED sont des sorties
+  pinMode(ledRouge, OUTPUT);
+  pinMode(ledVerte, OUTPUT);
+
+  // on connecte le servomoteur branché sur la broche 9
+  servo.attach(servomoteur);
+
+  // configure les broches du capteur ultrasonique
+  pinMode(trigPin, OUTPUT);
+  pinMode(echoPin, INPUT);
+
+  // allume le feu rouge (état initial)
+  digitalWrite(ledRouge, HIGH);
+  // ferme la barrière
+  servo.write(0);
+}
+
+// création de la boucle
+void loop()
+{
+  long duree, distance;
+
+  // déclenche le signal ultrasonique
+  digitalWrite(trigPin, LOW);
+  delayMicroseconds(2);
+  digitalWrite(trigPin, HIGH);
+  delayMicroseconds(10);
+  digitalWrite(trigPin, LOW);
+
+  // mesure le temps de retour de l'écho
+  duree = pulseIn(echoPin, HIGH);
+
+  // calcule la distance en fonction du temps de retour
+  distance = (duree * 0.0343) / 2;
+// si la distance est inférieure à 10 cm 
+  if (distance < 10)
+  {
+    Serial.println("Présence détectée");
+    for (int pos = 0; pos <= 90; pos++)
+    {
+      servo.write(pos);
+      delay(15);
+    }
+
+    // on allume le feu vert durant 5 secondes
+    digitalWrite(ledRouge, LOW);  // led rouge éteinte
+    digitalWrite(ledVerte, HIGH); // led verte allumée
+    delay(5000);                   // attente de 5 secondes
+
+    // on repasse au rouge
+    digitalWrite(ledVerte, LOW);  // led verte éteinte
+    digitalWrite(ledRouge, HIGH); // led rouge allumée
+
+    // on redescend la barrière
+    for (int pos = 90; pos >= 0; pos--)
+    {
+      servo.write(pos);
+      delay(15);
+    }
+  }
+}
